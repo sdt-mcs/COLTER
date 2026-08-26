@@ -242,6 +242,8 @@ public class MetricsCollector implements Serializable {
             
             // Collect I/O metrics
             metrics.setIoThroughput(collectIoThroughput());
+
+            metrics.setAppLoad(collectAppLoad());
             
             // Update cache
             nodeMetricsCache = metrics;
@@ -253,6 +255,24 @@ public class MetricsCollector implements Serializable {
         }
     }
     
+    /**
+     * Collect node thread/task count from /proc/loadavg (4th field, runnable/total)
+     *
+     * @return node thread/task count, or 0.0 on error
+     */
+    private double collectAppLoad() {
+        try {
+            String content = new String(Files.readAllBytes(Paths.get("/proc/loadavg"))).trim();
+            String[] parts = content.split("\\s+");
+            if (parts.length >= 4 && parts[3].contains("/")) {
+                return Double.parseDouble(parts[3].split("/")[1]);
+            }
+        } catch (Exception e) {
+            LOG.error("Error collecting app load: {}", e.getMessage());
+        }
+        return 0.0;
+    }
+
     /**
      * Collect CPU utilization percentage
      * 
