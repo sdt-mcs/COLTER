@@ -5,6 +5,8 @@ import com.perphproctor.common.Metrics;
 import com.perphproctor.common.Utils;
 import com.perphproctor.common.WorkloadTypes.BatchJobType;
 import com.perphproctor.common.WorkloadTypes.LraComponentType;
+import com.perphproctor.common.WorkloadTypes;
+import com.perphproctor.common.WorkloadProfile;
 import com.perphproctor.continuouslearning.ContinualLearningRandomForest;
 import com.perphproctor.continuouslearning.ModelEvaluator;
 
@@ -325,6 +327,9 @@ public class PerformancePredictor implements Serializable {
                 // Predict latency
                 double predictedLatency = modelManager.predict(combinedMetrics);
                 
+                // LAIP: scale by the layer's dominant contended resource
+                predictedLatency *= layerSensitivityFactor(component.getComponentType(), nodeMetrics);
+
                 // Add to predictions
                 predictions.put(serviceName, predictedLatency);
             }
@@ -342,6 +347,37 @@ public class PerformancePredictor implements Serializable {
         }
     }
     
+    // Picks the resource with highest (sensitivity x utilization) for this layer
+    // and scales the prediction by its severity.
+    private double layerSensitivityFactor(LraComponentType type, Metrics nodeMetrics) {
+        if (type == null) return 1.0;
+
+        WorkloadProfile p = WorkloadTypes.createLraProfile("laip-ref", type.name(), type);
+
+        double cpuU = nodeMetrics.getCpuUtilization();
+        double memU = nodeMetrics.getMemoryUtilization();
+        double llcU = nodeMetrics.getLlcUtilization();
+        double mbwU = nodeMetrics.getMemoryBandwidth() / 1000.0; // see ResourcePatternDetector
+        double ioU  = nodeMetrics.getIoThroughput()  / 5.0;
+
+        final double MAX_SENS = 10.0;
+        double[] sens = { p.getCpuSensitivity(), p.getMemorySensitivity(), p.getLlcSensitivity(),
+                           p.getMbwSensitivity(), p.getIoSensitivity() };
+        double[] util = { cpuU, memU, llcU, mbwU, ioU };
+
+        int dominant = 0;
+        double maxScore = -1.0;
+        for (int i = 0; i < sens.length; i++) {
+            double score = sens[i] * util[i];
+            if (score > maxScore) { maxScore = score; dominant = i; }
+        }
+
+        // ALPHA caps the factor at 1+ALPHA=1.5, matching the max tail-latency multiplier observed
+        // in our deployment data. Not the original production constant (unavailable); placeholder.
+        final double ALPHA = 0.5;
+        return 1.0 + (sens[dominant] / MAX_SENS) * (util[dominant] / 100.0) * ALPHA;
+    }
+
     /**
      * Calculate normalized performance impact based on baseline latencies
      * 
