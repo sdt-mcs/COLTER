@@ -141,7 +141,7 @@ ax.grid(
 
 
 plt.savefig(
-    "enhanced_batch_jct_comparison_csv.pdf",
+    "enhanced_batch_jct_comparison.pdf",
     bbox_inches="tight"
 )
 
