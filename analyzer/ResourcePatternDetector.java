@@ -157,8 +157,11 @@ public class ResourcePatternDetector implements Serializable {
             totalCpu += sample.getCpuUtilization();
             totalMemory += sample.getMemoryUtilization();
             totalLlc += sample.getLlcUtilization();
-            totalMbw += sample.getMemoryBandwidth() / 1000.0; // Normalize to percentage
-            totalIo += sample.getIoThroughput() / 5.0; // Normalize to percentage
+            // Approx. normalize to a [0,100] scale vs. platform peak memory bandwidth
+            // (~115 GB/s/socket), aligning MBW with CPU/LLC percentages for batch-type classification.
+            totalMbw += sample.getMemoryBandwidth() / 1000.0;
+            // Approx. normalize to a [0,100] scale vs. platform I/O baseline (~500 MB/s/node).
+            totalIo += sample.getIoThroughput() / 5.0;
         }
         
         int count = metrics.size();
