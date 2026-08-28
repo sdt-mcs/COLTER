@@ -42,12 +42,12 @@ integration and is not part of this public subset.
 `experiments/` contains the plotting scripts and the underlying measurement data behind the
 main figures:
 
-- `latency_real.py` + `tail_latency_data.csv` — per-service LRA tail latency (Fig. 5)
-- `jct_real.py` + `spark_jct_final.csv` — batch job completion time (Fig. 7)
+- `latency_analyse.py` + `tail_latency_data.csv` — per-service LRA tail latency (Fig. 5)
+- `jct_analyse.py` + `spark_jct_final.csv` — batch job completion time (Fig. 7)
 
 ```
-python3 experiments/latency_real.py
-python3 experiments/jct_real.py
+python3 experiments/latency_analyse.py
+python3 experiments/jct_analyse.py
 ```
 
 ## Notes on specific implementation details
