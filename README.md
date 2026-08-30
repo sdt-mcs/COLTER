@@ -43,7 +43,7 @@ integration and is not part of this public subset.
 main figures:
 
 - `latency_analyse.py` + `tail_latency_data.csv` — per-service LRA tail latency (Fig. 5)
-- `jct_analyse.py` + `spark_jct_final.csv` — batch job completion time (Fig. 7)
+- `jct_analyse.py` + `spark_jct.csv` — batch job completion time (Fig. 7)
 
 ```
 python3 experiments/latency_analyse.py
